@@ -78,11 +78,11 @@ impl Pattern {
     }
 }
 
-impl TryInto<Pattern> for &str {
+impl TryFrom<&str> for Pattern {
     type Error = anyhow::Error;
 
-    fn try_into(self) -> Result<Pattern> {
-        Pattern::from_str(self)
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
     }
 }
 
@@ -182,6 +182,7 @@ mod test {
 
         assert_eq!(abs(a), a - 42 + 4);
     }
+
     #[test]
     fn mem_xref() {
         let data: &[u8] = &[1, 2, 3, 4, 0x12, 0x34, 0x56, 0x78];
@@ -219,10 +220,19 @@ mod test {
         assert_eq!(p.0[12], Some(b'!'));
     }
 
-    #[cfg(test)]
     #[test]
     fn mem_pattern_try_into() {
         let p: Pattern = "Hello, world!".try_into().unwrap();
+
+        assert_eq!(p.0[0], Some(b'H'));
+        assert_eq!(p.0[1], Some(b'e'));
+        assert_eq!(p.0[2], Some(b'l'));
+        assert_eq!(p.0[12], Some(b'!'));
+    }
+
+    #[test]
+    fn mem_pattern_try_from() {
+        let p = Pattern::try_from("Hello, world!").unwrap();
 
         assert_eq!(p.0[0], Some(b'H'));
         assert_eq!(p.0[1], Some(b'e'));
