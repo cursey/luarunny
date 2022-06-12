@@ -34,6 +34,17 @@ pub fn register(ctx: &Context) -> Result<()> {
         })?,
     )?;
 
+    // rscan
+    mem.set(
+        "rscan",
+        ctx.create_function(|_ctx, (start, len, pat): (usize, usize, String)| {
+            match rscan(span(start, len), pat.as_str()) {
+                Ok(m) => Ok(m),
+                Err(e) => Err(rlua::Error::external(e)),
+            }
+        })?,
+    )?;
+
     mem.set(
         "scan_all",
         ctx.create_function(|_ctx, (start, len, pat): (usize, usize, String)| {
@@ -48,6 +59,17 @@ pub fn register(ctx: &Context) -> Result<()> {
         "scan_str",
         ctx.create_function(|_ctx, (start, len, pat): (usize, usize, String)| {
             match scan_str(span(start, len), pat.as_str()) {
+                Ok(m) => Ok(m),
+                Err(e) => Err(rlua::Error::external(e)),
+            }
+        })?,
+    )?;
+
+    // rscan_str
+    mem.set(
+        "rscan_str",
+        ctx.create_function(|_ctx, (start, len, pat): (usize, usize, String)| {
+            match rscan_str(span(start, len), pat.as_str()) {
                 Ok(m) => Ok(m),
                 Err(e) => Err(rlua::Error::external(e)),
             }

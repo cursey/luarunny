@@ -115,6 +115,35 @@ pub fn scan_pattern(mem: &[u8], pat: &Pattern) -> Option<usize> {
     None
 }
 
+pub fn rscan_pattern(mem: &[u8], pat: &Pattern) -> Option<usize> {
+    let mut i = mem.len() - pat.0.len();
+
+    while i > 0 {
+        let mut j = 0;
+
+        while j < pat.0.len() {
+            match pat.0[j] {
+                Some(b) => {
+                    if mem[i + j] != b {
+                        break;
+                    }
+                }
+                None => {}
+            }
+
+            j += 1;
+        }
+
+        if j == pat.0.len() {
+            return Some(mem.as_ptr() as usize + i);
+        }
+
+        i -= 1;
+    }
+
+    None
+}
+
 pub fn scan_all_pattern(mem: &[u8], pat: &Pattern) -> Vec<usize> {
     let mut refs = Vec::new();
     let mut i = 0;
@@ -136,12 +165,20 @@ pub fn scan(mem: &[u8], pat: &str) -> Result<Option<usize>> {
     Ok(scan_pattern(mem, &Pattern::new(pat)?))
 }
 
+pub fn rscan(mem: &[u8], pat: &str) -> Result<Option<usize>> {
+    Ok(rscan_pattern(mem, &Pattern::new(pat)?))
+}
+
 pub fn scan_all(mem: &[u8], pat: &str) -> Result<Vec<usize>> {
     Ok(scan_all_pattern(mem, &Pattern::new(pat)?))
 }
 
 pub fn scan_str(mem: &[u8], pat: &str) -> Result<Option<usize>> {
     Ok(scan_pattern(mem, &Pattern::from_str(pat)?))
+}
+
+pub fn rscan_str(mem: &[u8], pat: &str) -> Result<Option<usize>> {
+    Ok(rscan_pattern(mem, &Pattern::from_str(pat)?))
 }
 
 pub fn scan_all_str(mem: &[u8], pat: &str) -> Result<Vec<usize>> {
