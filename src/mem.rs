@@ -57,7 +57,7 @@ impl Pattern {
         let mut mask = Vec::new();
 
         for b in pat.split_ascii_whitespace() {
-            if b == "?" {
+            if b == "?" || b == "??" {
                 mask.push(None);
             } else {
                 mask.push(Some(u8::from_str_radix(b, 16)?));
