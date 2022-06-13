@@ -185,6 +185,86 @@ pub fn scan_all_str(mem: &[u8], pat: &str) -> Result<Vec<usize>> {
     Ok(scan_all_pattern(mem, &Pattern::from_str(pat)?))
 }
 
+pub fn read_i8(address: usize) -> i8 {
+    unsafe { *(address as *const i8) }
+}
+
+pub fn read_i16(address: usize) -> i16 {
+    unsafe { *(address as *const i16) }
+}
+
+pub fn read_i32(address: usize) -> i32 {
+    unsafe { *(address as *const i32) }
+}
+
+pub fn read_i64(address: usize) -> i64 {
+    unsafe { *(address as *const i64) }
+}
+
+pub fn read_f32(address: usize) -> f32 {
+    unsafe { *(address as *const f32) }
+}
+
+pub fn read_f64(address: usize) -> f64 {
+    unsafe { *(address as *const f64) }
+}
+
+pub fn read_u8(address: usize) -> u8 {
+    unsafe { *(address as *const u8) }
+}
+
+pub fn read_u16(address: usize) -> u16 {
+    unsafe { *(address as *const u16) }
+}
+
+pub fn read_u32(address: usize) -> u32 {
+    unsafe { *(address as *const u32) }
+}
+
+pub fn read_u64(address: usize) -> u64 {
+    unsafe { *(address as *const u64) }
+}
+
+pub fn write_i8(address: usize, value: i8) {
+    unsafe { *(address as *mut i8) = value }
+}
+
+pub fn write_i16(address: usize, value: i16) {
+    unsafe { *(address as *mut i16) = value }
+}
+
+pub fn write_i32(address: usize, value: i32) {
+    unsafe { *(address as *mut i32) = value }
+}
+
+pub fn write_i64(address: usize, value: i64) {
+    unsafe { *(address as *mut i64) = value }
+}
+
+pub fn write_f32(address: usize, value: f32) {
+    unsafe { *(address as *mut f32) = value }
+}
+
+pub fn write_f64(address: usize, value: f64) {
+    unsafe { *(address as *mut f64) = value }
+}
+
+pub fn write_u8(address: usize, value: u8) {
+    unsafe { *(address as *mut u8) = value }
+}
+
+pub fn write_u16(address: usize, value: u16) {
+    unsafe { *(address as *mut u16) = value }
+}
+
+pub fn write_u32(address: usize, value: u32) {
+    unsafe { *(address as *mut u32) = value }
+}
+
+pub fn write_u64(address: usize, value: u64) {
+    unsafe { *(address as *mut u64) = value }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

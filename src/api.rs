@@ -86,6 +86,166 @@ pub fn register(ctx: &Context) -> Result<()> {
         })?,
     )?;
 
+    // read_i8
+    mem.set(
+        "read_i8",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_i8(address))
+        })?,
+    )?;
+
+    // read_i16
+    mem.set(
+        "read_i16",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_i16(address))
+        })?,
+    )?;
+
+    // read_i32
+    mem.set(
+        "read_i32",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_i32(address))
+        })?,
+    )?;
+
+    // read_i64
+    mem.set(
+        "read_i64",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_i64(address))
+        })?,
+    )?;
+
+    // read_f32
+    mem.set(
+        "read_f32",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_f32(address))
+        })?,
+    )?;
+
+    // read_f64
+    mem.set(
+        "read_f64",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_f64(address))
+        })?,
+    )?;
+
+    // read_u8
+    mem.set(
+        "read_u8",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_u8(address))
+        })?,
+    )?;
+
+    // read_u16
+    mem.set(
+        "read_u16",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_u16(address))
+        })?,
+    )?;
+
+    // read_u32
+    mem.set(
+        "read_u32",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_u32(address))
+        })?,
+    )?;
+
+    // read_u64
+    mem.set(
+        "read_u64",
+        ctx.create_function(|_ctx, address: usize| {
+            Ok(read_u64(address))
+        })?,
+    )?;
+
+    // write_i8
+    mem.set(
+        "write_i8",
+        ctx.create_function(|_ctx, (address, value): (usize, i8)| {
+            Ok(write_i8(address, value))
+        })?,
+    )?;
+
+    // write_i16
+    mem.set(
+        "write_i16",
+        ctx.create_function(|_ctx, (address, value): (usize, i16)| {
+            Ok(write_i16(address, value))
+        })?,
+    )?;
+
+    // write_i32
+    mem.set(
+        "write_i32",
+        ctx.create_function(|_ctx, (address, value): (usize, i32)| {
+            Ok(write_i32(address, value))
+        })?,
+    )?;
+
+    // write_i64
+    mem.set(
+        "write_i64",
+        ctx.create_function(|_ctx, (address, value): (usize, i64)| {
+            Ok(write_i64(address, value))
+        })?,
+    )?;
+
+    // write_f32
+    mem.set(
+        "write_f32",
+        ctx.create_function(|_ctx, (address, value): (usize, f32)| {
+            Ok(write_f32(address, value))
+        })?,
+    )?;
+
+    // write_f64
+    mem.set(
+        "write_f64",
+        ctx.create_function(|_ctx, (address, value): (usize, f64)| {
+            Ok(write_f64(address, value))
+        })?,
+    )?;
+
+    // write_u8
+    mem.set(
+        "write_u8",
+        ctx.create_function(|_ctx, (address, value): (usize, u8)| {
+            Ok(write_u8(address, value))
+        })?,
+    )?;
+
+    // write_u16
+    mem.set(
+        "write_u16",
+        ctx.create_function(|_ctx, (address, value): (usize, u16)| {
+            Ok(write_u16(address, value))
+        })?,
+    )?;
+
+    // write_u32
+    mem.set(
+        "write_u32",
+        ctx.create_function(|_ctx, (address, value): (usize, u32)| {
+            Ok(write_u32(address, value))
+        })?,
+    )?;
+
+    // write_u64
+    mem.set(
+        "write_u64",
+        ctx.create_function(|_ctx, (address, value): (usize, u64)| {
+            Ok(write_u64(address, value))
+        })?,
+    )?;
+
     mem.set(
         "test",
         ctx.create_function(|_ctx, (a, b): (i32, i32)| Ok(a + b))?,
