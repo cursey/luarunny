@@ -76,6 +76,25 @@ impl Pattern {
 
         Ok(Self(mask))
     }
+
+    pub fn matches(&self, mem: &[u8]) -> bool {
+        let mut i = 0;
+
+        while i < self.0.len() {
+            match self.0[i] {
+                Some(b) => {
+                    if mem[i] != b {
+                        break;
+                    }
+                }
+                None => {}
+            }
+
+            i += 1;
+        }
+
+        i == self.0.len()
+    }
 }
 
 impl TryFrom<&str> for Pattern {
@@ -90,22 +109,7 @@ pub fn scan_pattern(mem: &[u8], pat: &Pattern) -> Option<usize> {
     let mut i = 0;
 
     while i < mem.len() - pat.0.len() {
-        let mut j = 0;
-
-        while j < pat.0.len() {
-            match pat.0[j] {
-                Some(b) => {
-                    if mem[i + j] != b {
-                        break;
-                    }
-                }
-                None => {}
-            }
-
-            j += 1;
-        }
-
-        if j == pat.0.len() {
+        if pat.matches(&mem[i..]) {
             return Some(mem.as_ptr() as usize + i);
         }
 
@@ -119,22 +123,7 @@ pub fn rscan_pattern(mem: &[u8], pat: &Pattern) -> Option<usize> {
     let mut i = mem.len() - pat.0.len();
 
     while i > 0 {
-        let mut j = 0;
-
-        while j < pat.0.len() {
-            match pat.0[j] {
-                Some(b) => {
-                    if mem[i + j] != b {
-                        break;
-                    }
-                }
-                None => {}
-            }
-
-            j += 1;
-        }
-
-        if j == pat.0.len() {
+        if pat.matches(&mem[i..]) {
             return Some(mem.as_ptr() as usize + i);
         }
 
