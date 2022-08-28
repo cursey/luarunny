@@ -20,6 +20,7 @@ eframe = "0.19.0"
 egui = "0.19.0"
 rlua = "0.19.2"
 anyhow = "1.0.57"
+lazy_static = "1.4.0"
 
 [dependencies.windows]
 version = "0.37.0"
