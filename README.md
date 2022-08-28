@@ -1,1 +1,1 @@
-# lua-runny
+# LuaRunny
