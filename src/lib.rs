@@ -45,8 +45,6 @@ lazy_static! {
 
 struct MyApp {
     filepath: PathBuf,
-    name: String,
-    age: u32,
     lua: Lua,
     input: String,
 }
@@ -73,12 +71,21 @@ impl MyApp {
                     .expect("Failed to create the print function"),
                 )
                 .expect("Failed to register the print function");
+
+            ctx.globals()
+                .set(
+                    "cls",
+                    ctx.create_function(|_ctx, _: ()| {
+                        MSG.lock().unwrap().clear();
+                        Ok(())
+                    })
+                    .expect("Failed to create the cls function"),
+                )
+                .expect("Failed to register the cls function");
         });
 
         Self {
             filepath,
-            name: "cursey".to_string(),
-            age: 30,
             lua,
             input: "".to_string(),
         }
@@ -88,49 +95,53 @@ impl MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::TextEdit::multiline(&mut *MSG.lock().unwrap())
-                .interactive(false)
-                .cursor_at_end(true)
-                .desired_width(f32::INFINITY)
-                .desired_rows(25)
-                .font(egui::TextStyle::Monospace)
-                .show(ui);
+            egui::ScrollArea::vertical()
+                .stick_to_bottom(true)
+                .show(ui, |ui| {
+                    egui::TextEdit::multiline(&mut *MSG.lock().unwrap())
+                        .interactive(false)
+                        .cursor_at_end(true)
+                        .desired_width(f32::INFINITY)
+                        .desired_rows(25)
+                        .font(egui::TextStyle::Monospace)
+                        .show(ui);
 
-            let output = egui::TextEdit::singleline(&mut self.input)
-                .interactive(true)
-                .desired_width(f32::INFINITY)
-                .font(egui::TextStyle::Monospace)
-                .lock_focus(true)
-                .show(ui);
+                    let output = egui::TextEdit::singleline(&mut self.input)
+                        .interactive(true)
+                        .desired_width(f32::INFINITY)
+                        .font(egui::TextStyle::Monospace)
+                        .lock_focus(true)
+                        .show(ui);
 
-            if output.response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
-                // refocus the input field
-                output.response.request_focus();
+                    if output.response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                        // refocus the input field
+                        output.response.request_focus();
 
-                MSG.lock()
-                    .unwrap()
-                    .push_str(format!("> {}\n", self.input).as_str());
-                self.lua
-                    .context(|ctx| match ctx.load(&self.input).eval::<MultiValue>() {
-                        Ok(values) => {
-                            MSG.lock().unwrap().push_str(
-                                format!(
-                                    "{}\n",
-                                    values
-                                        .iter()
-                                        .map(|value| format!("{:?}", value))
-                                        .collect::<Vec<_>>()
-                                        .join("\t")
-                                )
-                                .as_str(),
-                            );
-                        }
-                        Err(e) => {
-                            MSG.lock().unwrap().push_str(format!("{}\n", e).as_str());
-                        }
-                    });
-                self.input.clear();
-            }
+                        MSG.lock()
+                            .unwrap()
+                            .push_str(format!("> {}\n", self.input).as_str());
+                        self.lua
+                            .context(|ctx| match ctx.load(&self.input).eval::<MultiValue>() {
+                                Ok(values) => {
+                                    MSG.lock().unwrap().push_str(
+                                        format!(
+                                            "{}\n",
+                                            values
+                                                .iter()
+                                                .map(|value| format!("{:?}", value))
+                                                .collect::<Vec<_>>()
+                                                .join("\t")
+                                        )
+                                        .as_str(),
+                                    );
+                                }
+                                Err(e) => {
+                                    MSG.lock().unwrap().push_str(format!("{}\n", e).as_str());
+                                }
+                            });
+                        self.input.clear();
+                    }
+                });
         });
     }
 }
