@@ -78,6 +78,10 @@ impl Pattern {
     }
 
     pub fn matches(&self, mem: &[u8]) -> bool {
+        if self.0.len() > mem.len() {
+            return false;
+        }
+
         let mut i = 0;
 
         while i < self.0.len() {
