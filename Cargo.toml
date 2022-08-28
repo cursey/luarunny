@@ -1,5 +1,5 @@
 [package]
-name = "script-runner"
+name = "lua-runny"
 version = "0.1.0"
 edition = "2021"
 
