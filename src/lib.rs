@@ -56,15 +56,30 @@ struct MyApp {
 
 impl MyApp {
     pub fn new(filepath: PathBuf) -> Self {
-        let lua = unsafe {
+        let mut me = Self {
+            filepath,
+            lua: Lua::new(),
+            input: "".to_string(),
+            line: "".to_string(),
+        };
+
+        me.reset();
+
+        me
+    }
+
+    fn reset(&mut self) {
+        self.lua = unsafe {
             Lua::unsafe_new_with_flags(
                 StdLib::ALL_NO_DEBUG,
                 InitFlags::PCALL_WRAPPERS | InitFlags::LOAD_WRAPPERS,
             )
         };
 
-        lua.context(|ctx| {
-            api::register(&ctx).expect("Failed to register the API with the Lua context");
+        self.lua.context(|ctx| {
+            ctx.set_named_registry_value("wants_reset", false).unwrap();
+
+            api::register(&ctx).unwrap();
 
             ctx.globals()
                 .set(
@@ -74,9 +89,9 @@ impl MyApp {
                         print_msg(&msg);
                         Ok(())
                     })
-                    .expect("Failed to create the print function"),
+                    .unwrap(),
                 )
-                .expect("Failed to register the print function");
+                .unwrap();
 
             ctx.globals()
                 .set(
@@ -85,17 +100,22 @@ impl MyApp {
                         MSG.lock().unwrap().clear();
                         Ok(())
                     })
-                    .expect("Failed to create the cls function"),
+                    .unwrap(),
                 )
-                .expect("Failed to register the cls function");
+                .unwrap();
+
+            ctx.globals()
+                .set(
+                    "reset",
+                    ctx.create_function_mut(|ctx, _: ()| {
+                        ctx.set_named_registry_value("wants_reset", true)?;
+                        Ok(())
+                    }).unwrap(),
+                )
+                .unwrap();
         });
 
-        Self {
-            filepath,
-            lua,
-            input: "".to_string(),
-            line: "".to_string(),
-        }
+        print_msg("Welcome to LuaRunny!\n");
     }
 
     fn on_input(&mut self) {
@@ -108,6 +128,8 @@ impl MyApp {
         }
 
         self.line.push_str(&self.input);
+
+        let mut wants_reset = false;
 
         self.lua
             .context(|ctx| match ctx.load(&self.line).eval::<MultiValue>() {
@@ -126,6 +148,7 @@ impl MyApp {
                         );
                     }
                     self.line.clear();
+                    wants_reset = ctx.named_registry_value("wants_reset").unwrap();
                 }
                 Err(Error::SyntaxError {
                     incomplete_input: true,
@@ -140,6 +163,10 @@ impl MyApp {
             });
 
         self.input.clear();
+
+        if wants_reset {
+            self.reset();
+        }
     }
 }
 
