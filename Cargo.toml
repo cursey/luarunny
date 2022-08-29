@@ -38,4 +38,4 @@ features = [
 
 [patch.crates-io]
 #winit = { path = "../winit" }
-winit = { git = "https://github.com/cursey/winit.git", branch = "no-main-thread-check" }
+winit = { git = "https://github.com/cursey/winit.git", rev = "6edb7330ceeef5f9f863ebce47bf988f79c9b756" }
