@@ -3,7 +3,7 @@
 mod api;
 mod mem;
 
-use rlua::{InitFlags, Lua, MultiValue, StdLib};
+use rlua::{Error, InitFlags, Lua, MultiValue, StdLib};
 use std::{ffi::c_void, path::PathBuf, sync::Mutex, thread};
 use windows::Win32::{
     Foundation::{BOOL, HINSTANCE},
@@ -43,10 +43,15 @@ lazy_static! {
     static ref MSG: Mutex<String> = Mutex::new(String::new());
 }
 
+fn print_msg(msg: &str) {
+    MSG.lock().unwrap().push_str(msg);
+}
+
 struct MyApp {
     filepath: PathBuf,
     lua: Lua,
     input: String,
+    line: String,
 }
 
 impl MyApp {
@@ -64,8 +69,9 @@ impl MyApp {
             ctx.globals()
                 .set(
                     "print",
-                    ctx.create_function(|_ctx, str: String| {
-                        MSG.lock().unwrap().push_str(&str);
+                    ctx.create_function(|_ctx, mut msg: String| {
+                        msg.push_str("\n");
+                        print_msg(&msg);
                         Ok(())
                     })
                     .expect("Failed to create the print function"),
@@ -88,7 +94,52 @@ impl MyApp {
             filepath,
             lua,
             input: "".to_string(),
+            line: "".to_string(),
         }
+    }
+
+    fn on_input(&mut self) {
+        if !self.line.is_empty() {
+            print_msg(format!(">> {}\n", self.input).as_str());
+        } else if MSG.lock().unwrap().is_empty() {
+            print_msg(format!("> {}\n", self.input).as_str());
+        } else {
+            print_msg(format!("\n> {}\n", self.input).as_str());
+        }
+
+        self.line.push_str(&self.input);
+
+        self.lua
+            .context(|ctx| match ctx.load(&self.line).eval::<MultiValue>() {
+                Ok(values) => {
+                    if values.len() > 0 {
+                        print_msg(
+                            format!(
+                                "{}\n",
+                                values
+                                    .iter()
+                                    .map(|value| format!("{:?}", value))
+                                    .collect::<Vec<_>>()
+                                    .join("\t")
+                            )
+                            .as_str(),
+                        );
+                    }
+                    self.line.clear();
+                }
+                Err(Error::SyntaxError {
+                    incomplete_input: true,
+                    ..
+                }) => {
+                    self.line.push_str("\n");
+                }
+                Err(e) => {
+                    print_msg(format!("{}\n", e).as_str());
+                    self.line.clear()
+                }
+            });
+
+        self.input.clear();
     }
 }
 
@@ -102,7 +153,6 @@ impl eframe::App for MyApp {
                         .interactive(false)
                         .cursor_at_end(true)
                         .desired_width(f32::INFINITY)
-                        .desired_rows(25)
                         .font(egui::TextStyle::Monospace)
                         .show(ui);
 
@@ -116,30 +166,7 @@ impl eframe::App for MyApp {
                     if output.response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                         // refocus the input field
                         output.response.request_focus();
-
-                        MSG.lock()
-                            .unwrap()
-                            .push_str(format!("> {}\n", self.input).as_str());
-                        self.lua
-                            .context(|ctx| match ctx.load(&self.input).eval::<MultiValue>() {
-                                Ok(values) => {
-                                    MSG.lock().unwrap().push_str(
-                                        format!(
-                                            "{}\n",
-                                            values
-                                                .iter()
-                                                .map(|value| format!("{:?}", value))
-                                                .collect::<Vec<_>>()
-                                                .join("\t")
-                                        )
-                                        .as_str(),
-                                    );
-                                }
-                                Err(e) => {
-                                    MSG.lock().unwrap().push_str(format!("{}\n", e).as_str());
-                                }
-                            });
-                        self.input.clear();
+                        self.on_input();
                     }
                 });
         });
