@@ -35,7 +35,7 @@ fn start_thread(module: HINSTANCE) {
     eframe::run_native(
         "LuaRunny",
         options,
-        Box::new(|_cc| Box::new(MyApp::new(filepath))),
+        Box::new(|_cc| Box::new(LuaRunny::new(filepath))),
     )
 }
 
@@ -47,14 +47,14 @@ fn print_msg(msg: &str) {
     MSG.lock().unwrap().push_str(msg);
 }
 
-struct MyApp {
+struct LuaRunny {
     filepath: PathBuf,
     lua: Lua,
     input: String,
     line: String,
 }
 
-impl MyApp {
+impl LuaRunny {
     pub fn new(filepath: PathBuf) -> Self {
         let mut me = Self {
             filepath,
@@ -110,7 +110,8 @@ impl MyApp {
                     ctx.create_function_mut(|ctx, _: ()| {
                         ctx.set_named_registry_value("wants_reset", true)?;
                         Ok(())
-                    }).unwrap(),
+                    })
+                    .unwrap(),
                 )
                 .unwrap();
         });
@@ -170,7 +171,7 @@ impl MyApp {
     }
 }
 
-impl eframe::App for MyApp {
+impl eframe::App for LuaRunny {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical()
