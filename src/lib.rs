@@ -3,7 +3,7 @@
 mod api;
 mod mem;
 
-use rlua::{Error, InitFlags, Lua, MultiValue, StdLib};
+use mlua::prelude::*;
 use std::{ffi::c_void, path::PathBuf, sync::Mutex, thread};
 use windows::Win32::{
     Foundation::{BOOL, HINSTANCE},
@@ -69,52 +69,47 @@ impl LuaRunny {
     }
 
     fn reset(&mut self) {
-        self.lua = unsafe {
-            Lua::unsafe_new_with_flags(
-                StdLib::ALL_NO_DEBUG,
-                InitFlags::PCALL_WRAPPERS | InitFlags::LOAD_WRAPPERS,
+        let lua = unsafe { Lua::unsafe_new() };
+
+        lua.set_named_registry_value("wants_reset", false).unwrap();
+
+        api::register(&lua).unwrap();
+
+        lua.globals()
+            .set(
+                "print",
+                lua.create_function(|_, mut msg: String| {
+                    msg.push_str("\n");
+                    print_msg(&msg);
+                    Ok(())
+                })
+                .unwrap(),
             )
-        };
+            .unwrap();
 
-        self.lua.context(|ctx| {
-            ctx.set_named_registry_value("wants_reset", false).unwrap();
+        lua.globals()
+            .set(
+                "cls",
+                lua.create_function(|_, _: ()| {
+                    MSG.lock().unwrap().clear();
+                    Ok(())
+                })
+                .unwrap(),
+            )
+            .unwrap();
 
-            api::register(&ctx).unwrap();
+        lua.globals()
+            .set(
+                "reset",
+                lua.create_function_mut(|lua, _: ()| {
+                    lua.set_named_registry_value("wants_reset", true)?;
+                    Ok(())
+                })
+                .unwrap(),
+            )
+            .unwrap();
 
-            ctx.globals()
-                .set(
-                    "print",
-                    ctx.create_function(|_ctx, mut msg: String| {
-                        msg.push_str("\n");
-                        print_msg(&msg);
-                        Ok(())
-                    })
-                    .unwrap(),
-                )
-                .unwrap();
-
-            ctx.globals()
-                .set(
-                    "cls",
-                    ctx.create_function(|_ctx, _: ()| {
-                        MSG.lock().unwrap().clear();
-                        Ok(())
-                    })
-                    .unwrap(),
-                )
-                .unwrap();
-
-            ctx.globals()
-                .set(
-                    "reset",
-                    ctx.create_function_mut(|ctx, _: ()| {
-                        ctx.set_named_registry_value("wants_reset", true)?;
-                        Ok(())
-                    })
-                    .unwrap(),
-                )
-                .unwrap();
-        });
+        self.lua = lua;
 
         print_msg("Welcome to LuaRunny!\n");
     }
@@ -132,36 +127,35 @@ impl LuaRunny {
 
         let mut wants_reset = false;
 
-        self.lua
-            .context(|ctx| match ctx.load(&self.line).eval::<MultiValue>() {
-                Ok(values) => {
-                    if values.len() > 0 {
-                        print_msg(
-                            format!(
-                                "{}\n",
-                                values
-                                    .iter()
-                                    .map(|value| format!("{:?}", value))
-                                    .collect::<Vec<_>>()
-                                    .join("\t")
-                            )
-                            .as_str(),
-                        );
-                    }
-                    self.line.clear();
-                    wants_reset = ctx.named_registry_value("wants_reset").unwrap();
+        match self.lua.load(&self.line).eval::<mlua::MultiValue>() {
+            Ok(values) => {
+                if values.len() > 0 {
+                    print_msg(
+                        format!(
+                            "{}\n",
+                            values
+                                .iter()
+                                .map(|value| format!("{:?}", value))
+                                .collect::<Vec<_>>()
+                                .join("\t")
+                        )
+                        .as_str(),
+                    );
                 }
-                Err(Error::SyntaxError {
-                    incomplete_input: true,
-                    ..
-                }) => {
-                    self.line.push_str("\n");
-                }
-                Err(e) => {
-                    print_msg(format!("{}\n", e).as_str());
-                    self.line.clear()
-                }
-            });
+                self.line.clear();
+                wants_reset = self.lua.named_registry_value("wants_reset").unwrap();
+            }
+            Err(mlua::Error::SyntaxError {
+                incomplete_input: true,
+                ..
+            }) => {
+                self.line.push_str("\n");
+            }
+            Err(e) => {
+                print_msg(format!("{}\n", e).as_str());
+                self.line.clear()
+            }
+        }
 
         self.input.clear();
 
