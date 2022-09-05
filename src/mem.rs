@@ -1,5 +1,10 @@
 use anyhow::Result;
-use std::slice;
+use std::{mem::size_of, slice};
+use windows::Win32::System::{
+    LibraryLoader::GetModuleHandleA,
+    ProcessStatus::{K32GetModuleInformation, MODULEINFO},
+    Threading::GetCurrentProcess,
+};
 
 pub fn span<'a>(start: usize, len: usize) -> &'a [u8] {
     unsafe { slice::from_raw_parts(start as *const u8, len) }
@@ -258,6 +263,38 @@ pub fn write_u64(address: usize, value: u64) {
     unsafe { *(address as *mut u64) = value }
 }
 
+pub fn module(name: &str) -> Option<usize> {
+    match unsafe { GetModuleHandleA(name) } {
+        Ok(m) => Some(m.0 as usize),
+        Err(_) => None,
+    }
+}
+
+pub fn module_span<'a>(name: &str) -> Option<&'a [u8]> {
+    match unsafe { GetModuleHandleA(name) } {
+        Ok(m) => {
+            let mut info = MODULEINFO::default();
+
+            if unsafe {
+                K32GetModuleInformation(
+                    GetCurrentProcess(),
+                    m,
+                    &mut info,
+                    size_of::<MODULEINFO>() as u32,
+                )
+            }
+            .as_bool()
+                == false
+            {
+                return None;
+            }
+
+            Some(span(info.lpBaseOfDll as usize, info.SizeOfImage as usize))
+        }
+        Err(_) => None,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -388,5 +425,17 @@ mod test {
             scan_all_str(data.as_bytes(), "Hello").unwrap(),
             vec![data.as_ptr() as usize + 0, data.as_ptr() as usize + 14]
         );
+    }
+
+    #[test]
+    fn mem_module() {
+        assert!(module("kernel32.dll").is_some());
+        assert!(module("nonexistent.dll").is_none());
+    }
+
+    #[test]
+    fn mem_module_span() {
+        assert!(module_span("kernel32.dll").is_some());
+        assert!(module_span("nonexistent.dll").is_none());
     }
 }

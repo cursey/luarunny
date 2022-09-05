@@ -205,6 +205,21 @@ pub fn register(lua: &Lua) -> LuaResult<()> {
         lua.create_function(|_, (address, value): (usize, u64)| Ok(write_u64(address, value)))?,
     )?;
 
+    // module
+    mem.set(
+        "module",
+        lua.create_function(|_, name: String| Ok(module(name.as_str())))?,
+    )?;
+
+    // module_span
+    mem.set(
+        "module_len",
+        lua.create_function(|_, name: String| match module_span(name.as_str()) {
+            Some(m) => Ok(Some(m.len())),
+            None => Ok(None),
+        })?,
+    )?;
+
     lua.globals().set("mem", mem)?;
 
     Ok(())
@@ -340,5 +355,33 @@ mod test {
             lua.load(script.as_str()).eval::<Vec<usize>>().unwrap(),
             vec![data.as_ptr() as usize + 0, data.as_ptr() as usize + 14]
         );
+    }
+
+    #[test]
+    fn mem_module() {
+        let lua = Lua::new();
+        register(&lua).unwrap();
+
+        let script = r#"return mem.module("kernel32")"#;
+
+        assert!(lua.load(script).eval::<Option<usize>>().unwrap().is_some());
+
+        let script = r#"return mem.module("nonexistent")"#;
+
+        assert!(lua.load(script).eval::<Option<usize>>().unwrap().is_none());
+    }
+
+    #[test]
+    fn mem_module_len() {
+        let lua = Lua::new();
+        register(&lua).unwrap();
+
+        let script = r#"return mem.module_len("kernel32")"#;
+
+        assert!(lua.load(script).eval::<Option<usize>>().unwrap().is_some());
+
+        let script = r#"return mem.module_len("nonexistent")"#;
+
+        assert!(lua.load(script).eval::<Option<usize>>().unwrap().is_none());
     }
 }

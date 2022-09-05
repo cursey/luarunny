@@ -37,6 +37,7 @@ features = [
     "Win32_Security",
     "Win32_Storage_FileSystem",
     "Win32_System_LibraryLoader",
+    "Win32_System_ProcessStatus",
 ]
 
 [patch.crates-io]
