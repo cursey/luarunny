@@ -1,19 +1,11 @@
 [package]
 name = "luarunny"
+authors = ["cursey"]
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 crate-type = ["cdylib"]
-
-[profile.release]
-panic = "abort"
-lto = true
-strip = true
-opt-level = "z"
-codegen-units = 1
 
 [dependencies]
 eframe = "0.19.0"
@@ -23,7 +15,7 @@ lazy_static = "1.4.0"
 
 [dependencies.mlua]
 version = "0.8.3"
-features = ["lua54", "vendored", "send"]
+features = ["lua54", "send"]
 
 [dependencies.windows]
 version = "0.37.0"

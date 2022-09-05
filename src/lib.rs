@@ -1,8 +1,5 @@
 #![allow(dead_code)]
 
-mod api;
-mod mem;
-
 use mlua::prelude::*;
 use std::{ffi::c_void, path::PathBuf, sync::Mutex, thread};
 use windows::Win32::{
@@ -85,7 +82,7 @@ impl LuaRunny {
 
         lua.set_named_registry_value("wants_reset", false).unwrap();
 
-        api::register(&lua).unwrap();
+        //api::register(&lua).unwrap();
 
         lua.globals()
             .set(
