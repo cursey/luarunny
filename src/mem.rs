@@ -15,8 +15,8 @@ pub fn span_from<'a>(start: usize, end: usize) -> &'a [u8] {
 }
 
 pub fn abs(address: usize) -> usize {
-    let offset = unsafe { *(address as *const i32) };
-    address.wrapping_add(offset as usize + 4)
+    let offset = unsafe { *(address as *const i32) }.wrapping_add(4);
+    address.wrapping_add(offset as usize)
 }
 
 pub fn xref(mem: &[u8], address: usize) -> Option<usize> {
@@ -464,5 +464,12 @@ mod test {
     fn mem_module_span() {
         assert!(module_span("kernel32.dll").is_some());
         assert!(module_span("nonexistent.dll").is_none());
+    }
+
+    #[test]
+    fn mem_test_thing() {
+        let dll = module_span("ntdll").unwrap();
+        let s = scan_str(dll, "LdrpAllocateTls").unwrap();
+        assert!(xrefs(dll, s).len() > 0);
     }
 }
