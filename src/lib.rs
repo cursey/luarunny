@@ -24,23 +24,35 @@ extern "system" fn DllMain(module: HINSTANCE, reason: u32, _reserved: *const c_v
     true.into()
 }
 
+lazy_static! {
+    static ref MSG: Mutex<String> = Mutex::new(String::new());
+    static ref WANTS_EXIT: Mutex<bool> = Mutex::new(false);
+    static ref WANTS_RESET: Mutex<bool> = Mutex::new(false);
+    static ref WANTS_ALWAYS_ON_TOP: Mutex<bool> = Mutex::new(false);
+}
+
 fn start_thread(module: HINSTANCE) {
     let mut filename = vec![0u8; 1024];
     let len = unsafe { GetModuleFileNameA(module, &mut filename) };
     filename.resize(len as usize, 0);
-    let mut filepath = PathBuf::from(String::from_utf8(filename).unwrap());
-    filepath.pop();
-    let options = eframe::NativeOptions::default();
 
-    eframe::run_native(
-        "LuaRunny",
-        options,
-        Box::new(|_cc| Box::new(LuaRunny::new(filepath))),
-    )
-}
+    while !*WANTS_EXIT.lock().unwrap() || *WANTS_RESET.lock().unwrap() {
+        MSG.lock().unwrap().clear();
+        *WANTS_EXIT.lock().unwrap() = false;
+        *WANTS_RESET.lock().unwrap() = false;
 
-lazy_static! {
-    static ref MSG: Mutex<String> = Mutex::new(String::new());
+        let mut filepath = PathBuf::from(String::from_utf8(filename.clone()).unwrap());
+        filepath.pop();
+        let mut options = eframe::NativeOptions::default();
+
+        options.always_on_top = *WANTS_ALWAYS_ON_TOP.lock().unwrap();
+
+        eframe::run_native(
+            "LuaRunny",
+            options,
+            Box::new(|_cc| Box::new(LuaRunny::new(filepath))),
+        )
+    }
 }
 
 fn print_msg(msg: &str) {
@@ -109,12 +121,24 @@ impl LuaRunny {
             )
             .unwrap();
 
+        lua.globals()
+            .set(
+                "always_on_top",
+                lua.create_function_mut(|lua, always_on_top: bool| {
+                    *WANTS_ALWAYS_ON_TOP.lock().unwrap() = always_on_top;
+                    lua.set_named_registry_value("wants_reset", true)?;
+                    Ok(())
+                })
+                .unwrap(),
+            )
+            .unwrap();
+
         self.lua = lua;
 
         print_msg("Welcome to LuaRunny!\n");
     }
 
-    fn on_input(&mut self) {
+    fn on_input(&mut self, frame: &mut eframe::Frame) {
         if !self.line.is_empty() {
             print_msg(format!(">> {}\n", self.input).as_str());
         } else if MSG.lock().unwrap().is_empty() {
@@ -124,8 +148,6 @@ impl LuaRunny {
         }
 
         self.line.push_str(&self.input);
-
-        let mut wants_reset = false;
 
         match self.lua.load(&self.line).eval::<mlua::MultiValue>() {
             Ok(values) => {
@@ -143,7 +165,6 @@ impl LuaRunny {
                     );
                 }
                 self.line.clear();
-                wants_reset = self.lua.named_registry_value("wants_reset").unwrap();
             }
             Err(mlua::Error::SyntaxError {
                 incomplete_input: true,
@@ -159,14 +180,15 @@ impl LuaRunny {
 
         self.input.clear();
 
-        if wants_reset {
-            self.reset();
+        if self.lua.named_registry_value("wants_reset").unwrap() {
+            *WANTS_RESET.lock().unwrap() = true;
+            frame.close();
         }
     }
 }
 
 impl eframe::App for LuaRunny {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical()
                 .stick_to_bottom(true)
@@ -188,10 +210,15 @@ impl eframe::App for LuaRunny {
                     if output.response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
                         // refocus the input field
                         output.response.request_focus();
-                        self.on_input();
+                        self.on_input(frame);
                     }
                 });
         });
+    }
+
+    fn on_close_event(&mut self) -> bool {
+        *WANTS_EXIT.lock().unwrap() = true;
+        true
     }
 }
 
