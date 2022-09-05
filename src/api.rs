@@ -26,10 +26,7 @@ pub fn register(lua: &Lua) -> LuaResult<()> {
     mem.set(
         "scan",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match scan(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(scan(span(start, len), pat.as_str()))
         })?,
     )?;
 
@@ -37,30 +34,21 @@ pub fn register(lua: &Lua) -> LuaResult<()> {
     mem.set(
         "rscan",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match rscan(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(rscan(span(start, len), pat.as_str()))
         })?,
     )?;
 
     mem.set(
         "scan_all",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match scan_all(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(scan_all(span(start, len), pat.as_str()))
         })?,
     )?;
 
     mem.set(
         "scan_str",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match scan_str(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(scan_str(span(start, len), pat.as_str()))
         })?,
     )?;
 
@@ -68,20 +56,14 @@ pub fn register(lua: &Lua) -> LuaResult<()> {
     mem.set(
         "rscan_str",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match rscan_str(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(rscan_str(span(start, len), pat.as_str()))
         })?,
     )?;
 
     mem.set(
         "scan_all_str",
         lua.create_function(|_, (start, len, pat): (usize, usize, String)| {
-            match scan_all_str(span(start, len), pat.as_str()) {
-                Ok(m) => Ok(m),
-                Err(e) => Err(mlua::Error::external(e)),
-            }
+            Ok(scan_all_str(span(start, len), pat.as_str()))
         })?,
     )?;
 

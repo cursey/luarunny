@@ -159,28 +159,58 @@ pub fn scan_all_pattern(mem: &[u8], pat: &Pattern) -> Vec<usize> {
     refs
 }
 
-pub fn scan(mem: &[u8], pat: &str) -> Result<Option<usize>> {
-    Ok(scan_pattern(mem, &Pattern::new(pat)?))
+pub fn scan(mem: &[u8], pat: &str) -> Option<usize> {
+    let pat = match Pattern::new(pat) {
+        Ok(p) => p,
+        Err(_) => return None,
+    };
+
+    scan_pattern(mem, &pat)
 }
 
-pub fn rscan(mem: &[u8], pat: &str) -> Result<Option<usize>> {
-    Ok(rscan_pattern(mem, &Pattern::new(pat)?))
+pub fn rscan(mem: &[u8], pat: &str) -> Option<usize> {
+    let pat = match Pattern::new(pat) {
+        Ok(p) => p,
+        Err(_) => return None,
+    };
+
+    rscan_pattern(mem, &pat)
 }
 
-pub fn scan_all(mem: &[u8], pat: &str) -> Result<Vec<usize>> {
-    Ok(scan_all_pattern(mem, &Pattern::new(pat)?))
+pub fn scan_all(mem: &[u8], pat: &str) -> Vec<usize> {
+    let pat = match Pattern::new(pat) {
+        Ok(p) => p,
+        Err(_) => return Vec::new(),
+    };
+
+    scan_all_pattern(mem, &pat)
 }
 
-pub fn scan_str(mem: &[u8], pat: &str) -> Result<Option<usize>> {
-    Ok(scan_pattern(mem, &Pattern::from_str(pat)?))
+pub fn scan_str(mem: &[u8], pat: &str) -> Option<usize> {
+    let pat = match Pattern::from_str(pat) {
+        Ok(p) => p,
+        Err(_) => return None,
+    };
+
+    return scan_pattern(mem, &pat);
 }
 
-pub fn rscan_str(mem: &[u8], pat: &str) -> Result<Option<usize>> {
-    Ok(rscan_pattern(mem, &Pattern::from_str(pat)?))
+pub fn rscan_str(mem: &[u8], pat: &str) -> Option<usize> {
+    let pat = match Pattern::from_str(pat) {
+        Ok(p) => p,
+        Err(_) => return None,
+    };
+
+    rscan_pattern(mem, &pat)
 }
 
-pub fn scan_all_str(mem: &[u8], pat: &str) -> Result<Vec<usize>> {
-    Ok(scan_all_pattern(mem, &Pattern::from_str(pat)?))
+pub fn scan_all_str(mem: &[u8], pat: &str) -> Vec<usize> {
+    let pat = match Pattern::from_str(pat) {
+        Ok(p) => p,
+        Err(_) => return Vec::new(),
+    };
+
+    scan_all_pattern(mem, &pat)
 }
 
 pub fn read_i8(address: usize) -> i8 {
@@ -391,10 +421,7 @@ mod test {
     fn mem_scan() {
         let data: &[u8] = &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf];
 
-        assert_eq!(
-            scan(data, "0a ? 0C").unwrap(),
-            Some(data.as_ptr() as usize + 10)
-        );
+        assert_eq!(scan(data, "0a ? 0C").unwrap(), data.as_ptr() as usize + 10);
     }
 
     #[test]
@@ -402,7 +429,7 @@ mod test {
         let data: &[u8] = &[0, 1, 2, 3, 42, 77, 0, 1, 2, 3, 5, 6, 7];
 
         assert_eq!(
-            scan_all(data, "00 ? ? 03").unwrap(),
+            scan_all(data, "00 ? ? 03"),
             vec![data.as_ptr() as usize + 0, data.as_ptr() as usize + 6]
         );
     }
@@ -413,7 +440,7 @@ mod test {
 
         assert_eq!(
             scan_str(data.as_bytes(), "world").unwrap(),
-            Some(data.as_ptr() as usize + 7)
+            data.as_ptr() as usize + 7
         );
     }
 
@@ -422,7 +449,7 @@ mod test {
         let data = "Hello, world! Hello, moon!";
 
         assert_eq!(
-            scan_all_str(data.as_bytes(), "Hello").unwrap(),
+            scan_all_str(data.as_bytes(), "Hello"),
             vec![data.as_ptr() as usize + 0, data.as_ptr() as usize + 14]
         );
     }
